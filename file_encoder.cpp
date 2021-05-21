@@ -1,3 +1,5 @@
+#include <bits/stdc++.h>
+
 #include <iostream>
 
 #include <streambuf>
@@ -43,7 +45,9 @@ void encode_block(const encoder_t & encoder,
     char * data_buffer_,
     char * fec_buffer_,
     const std::size_t & read_amount);
-void encode_file(const encoder_t &  encoder, const std::string & input_filename,const  std::string & output_filename);
+void encode_file(const encoder_t & encoder,
+    const std::string & input_filename,
+        const std::string & output_filename);
 
 int main() {
 
@@ -74,11 +78,19 @@ int main() {
     return 0;
 }
 
-void encode_file(const encoder_t &  encoder, const std::string & input_filename, const std::string & output_filename) {
-    const int one_chunk_size_bytes = 1048546;
-    char * data_buffer_ = new char[data_length];
+void encode_file(const encoder_t & encoder,
+    const std::string & input_filename,
+        const std::string & output_filename) {
+    const int one_mega_bytes = 1048576;
+    const int columns = data_length;
+    const int rows = one_mega_bytes / columns;
+    const int one_chunk_size_bytes = rows * columns;
+    int flag = 0;
+    int total_length = 0;
+
     char * fec_buffer_ = new char[fec_length];
-    char * chunk_data;
+    char ** chunk_data = new char * [rows];
+
     std::size_t file_size = schifra::fileio::file_size(input_filename);
     if (file_size == 0) {
         std::cout << "Error: input file has ZERO size." << std::endl;
@@ -97,7 +109,6 @@ void encode_file(const encoder_t &  encoder, const std::string & input_filename,
         std::cout << "Error: output file could not be created." << std::endl;
         return;
     }
-
     for (int chunk = 0; chunk <= file_size / one_chunk_size_bytes; chunk++) {
         int length = 0;
         std::size_t remaining_bytes = 0;
@@ -110,23 +121,39 @@ void encode_file(const encoder_t &  encoder, const std::string & input_filename,
             remaining_bytes = length;
         }
 
-        chunk_data = new char[length];
-        in_stream.read(chunk_data, length);
         int index = 0;
+        std::cout << remaining_bytes << std::endl;
         while (remaining_bytes >= data_length) {
-            for (int i = 0; i < data_length; i++, index++) {
-                data_buffer_[i] = chunk_data[index];
-            }
-            encode_block(encoder, out_stream, data_buffer_, fec_buffer_, data_length);
+            chunk_data[index] = new char[code_length];
+            in_stream.read( & chunk_data[index][0], static_cast < std::streamsize > (data_length));
+            encode_block(encoder, out_stream, chunk_data[index], fec_buffer_, data_length);
             remaining_bytes -= data_length;
+            index++;
         }
+        std::cout << remaining_bytes << std::endl;
         if (remaining_bytes > 0) {
-            for (int i = 0; i < remaining_bytes; i++, index++) {
-                data_buffer_[i] = chunk_data[index];
-            }
-            encode_block(encoder, out_stream, data_buffer_, fec_buffer_, remaining_bytes);
+            flag = 1;
+            chunk_data[index] = new char[remaining_bytes + fec_length];
+            in_stream.read( & chunk_data[index][0], static_cast < std::streamsize > (remaining_bytes));
+            encode_block(encoder, out_stream, chunk_data[index], fec_buffer_, remaining_bytes);
+            index++;
         }
-        printf("chunk %d : %d bytes done!\n", chunk, length);
+
+        for (std::size_t i = 0; i < 255; ++i) {
+            for (std::size_t j = 0; j < index; ++j) {
+                out_stream << chunk_data[j][i];
+            }
+
+        }
+        /*for(std::size_t i = 0; i < index; ++i) {
+            if(flag && i == index -1){
+                out_stream.write( & chunk_data[i][0], static_cast < std::streamsize > (remaining_bytes + fec_length));
+            }
+            else
+                out_stream.write( & chunk_data[i][0], static_cast < std::streamsize > (code_length));
+        }*/
+        total_length += length;
+        printf("chunk %d : %d bytes done!\n", chunk, total_length);
     }
     in_stream.close();
     out_stream.close();
@@ -156,7 +183,7 @@ void encode_block(const encoder_t & encoder,
     for (std::size_t i = 0; i < fec_length; ++i) {
         fec_buffer_[i] = static_cast < char > (block_.fec(i) & 0xFF);
     }
-
-    out_stream.write( & data_buffer_[0], static_cast < std::streamsize > (read_amount));
-    out_stream.write( & fec_buffer_[0], fec_length);
+    for (std::size_t i = 0, j = read_amount; i < fec_length; ++i, ++j) {
+        data_buffer_[j] = fec_buffer_[i];
+    }
 }
