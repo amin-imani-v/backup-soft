@@ -13,11 +13,13 @@ int main()
    const std::size_t gen_poly_index      = 120;
    const std::size_t code_length         = 255;
    const std::size_t fec_length          =   32;
+   const std::size_t part_size_bytes     = 1048576;
    const std::string input_file_name     = "encoded_file.txt";
    const std::string output_file_name    = "decoded_file.txt";
+   
 
    typedef schifra::reed_solomon::decoder<code_length,fec_length> decoder_t;
-   typedef schifra::reed_solomon::file_decoder<code_length,fec_length> file_decoder_t;
+   typedef schifra::reed_solomon::file_decoder<part_size_bytes,code_length,fec_length> file_decoder_t;
 
    const schifra::galois::field field(field_descriptor,
                                       schifra::galois::primitive_polynomial_size06,
