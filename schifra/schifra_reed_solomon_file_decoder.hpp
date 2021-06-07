@@ -135,7 +135,10 @@ namespace schifra {
 
                         for (std::size_t i = 0; i < data_length; ++i) {
                             buffer_[i] = static_cast < char > (block_[i]);
-                            std::cout <<block_[i] <<std::endl;
+                            std::ofstream outdata ("example2.txt:,std::ios::app);
+                            outdata <<block_[i] <<std::endl;
+                              return;
+                            
                         }
 
                     }
