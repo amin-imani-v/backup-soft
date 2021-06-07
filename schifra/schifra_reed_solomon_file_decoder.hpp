@@ -46,7 +46,9 @@ namespace schifra {
 
                 file_decoder(const decoder_type & decoder,
                     	 	const std::string & input_file_name,
-                        const std::string & output_file_name) {
+                            const std::string & output_file_name,
+                            bool debug,
+                            int pause_block) : current_block_index_(0) {
 
                     const std::size_t columns = data_length;
                     const std::size_t rows = part_size_bytes / columns;
@@ -111,10 +113,28 @@ namespace schifra {
                             if (remaining_bytes_exists && i == index - 1) {
                                 process_partial_block(decoder, chunk_data[i], out_stream, remaining_bytes);
                                 out_stream.write( & chunk_data[i][0], static_cast < std::streamsize > (remaining_bytes - fec_length));
+                                if(debug){
+                                    std::cout<< "Decoding block " << current_block_index_<< std::endl;
+                                    for(std::size_t j = 0; j < code_length; ++j){
+                                        std::cout<< chunk_data[i][j];
+                                    }
+                                    std::cout<<std::endl << std::endl;
+                                }
                             } else {
                                 process_complete_block(decoder, chunk_data[i], out_stream);
                                 out_stream.write( & chunk_data[i][0], static_cast < std::streamsize > (data_length));
+                                if(debug){
+                                    std::cout<< "Decoding block " << current_block_index_<< std::endl;
+                                    for(std::size_t j = 0; j < code_length; ++j){
+                                        std::cout<< chunk_data[i][j];
+                                    }
+                                    std::cout<<std::endl << std::endl;
+                                    if(pause_block != -1 && current_block_index_ >= pause_block){
+                                        getchar();
+                                    }
+                                }
                             }
+                            current_block_index_++;
                         }
                     }
                     in_stream.close();
@@ -129,7 +149,7 @@ namespace schifra {
                         copy < char, code_length, fec_length > (buffer_, code_length, block_);
 
                         if (!decoder.decode(block_)) {
-                            std::cout << "reed_solomon::file_decoder.process_complete_block() - Error during decoding !" << std::endl;
+                            std::cout << "reed_solomon::file_decoder.process_complete_block() - Error during decoding  of block " << current_block_index_ << std::endl;
                             return;
                         }
 
@@ -144,7 +164,7 @@ namespace schifra {
                     std::ofstream & out_stream,
                     const std::size_t & read_amount) {
                     if (read_amount <= fec_length) {
-                        std::cout << "reed_solomon::file_decoder.process_partial_block() - Error during decoding !" << std::endl;
+                        std::cout << "reed_solomon::file_decoder.process_partial_block() - Error during decoding of block " << current_block_index_ << std::endl;
                         return;
                     }
 
@@ -163,7 +183,7 @@ namespace schifra {
                     }
 
                     if (!decoder.decode(block_)) {
-                        std::cout << "reed_solomon::file_decoder.process_partial_block() - Error during decoding !" << std::endl;
+                        std::cout << "reed_solomon::file_decoder.process_partial_block() - Error during decoding of block " << current_block_index_ << std::endl;
                         return;
                     }
 
@@ -173,6 +193,7 @@ namespace schifra {
                 }
 
                 block_type block_;
+                std::size_t current_block_index_;
             };
 
     } // namespace reed_solomon

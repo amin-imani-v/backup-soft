@@ -27,7 +27,9 @@ int main()
 
    const decoder_t rs_decoder(field,gen_poly_index);
 
-   file_decoder_t(rs_decoder, input_file_name, output_file_name);
+   bool debug = false; // Print block number and block data if true
+   int pause_block = -1; // Pause decoding when block number arrive to pause_block, default -1 to do nothing
+   file_decoder_t(rs_decoder, input_file_name, output_file_name, debug, pause_block);
 
    return 0;
 }
