@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     string path = "./";
     ofstream myfile("out.txt");
 
-    for (size_t i = 0; i <= 3; ++i)
+    for (size_t i = 0; i <= 70; ++i)
     {
         for (const auto &files : experimental::filesystem::recursive_directory_iterator(path))
         {
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
             stat(char_arr, &filestatus);
 
             size_t total_size = filestatus.st_size;
-            size_t chunk_size = 1024;
+            size_t chunk_size = 20 * 1024 * 1024;
 
 
             cout << "using chunk size: " << chunk_size << endl;
@@ -79,7 +79,8 @@ int main(int argc, char *argv[])
             for (const auto c : chunk_data) 
             {
                 cout << hex << int(c);
-                myfile << hex << int(c);
+               // myfile << hex << int(c);
+                myfile <<c;
             }
             cout << endl;
             myfile << endl;
