@@ -9,12 +9,11 @@
 
 using namespace std;
 
-int main(int argc, char *argv[])
+void chunking(string path, size_t chunk_size)
 {
-    string path = "./";
     ofstream myfile("out.txt");
 
-    for (size_t i = 0; i <= 70; ++i)
+    for (size_t i = 0; i <= 65; ++i)
     {
         for (const auto &files : experimental::filesystem::recursive_directory_iterator(path))
         {
@@ -24,24 +23,22 @@ int main(int argc, char *argv[])
 
             ifstream file(filePath, ifstream::binary);
 
-            
+            /* basic sanity check */
             if (not file)
             {
                 cerr << "file: " << filePath << " failed to open" << endl;
-                return 1;
+                return;
             }
 
             char *char_arr;
             string str_obj(filePath);
             char_arr = &str_obj[0];
             cout << char_arr;
-           
+            /* *NIX way to get file size without seeking to the end and back */
             struct stat filestatus;
             stat(char_arr, &filestatus);
 
             size_t total_size = filestatus.st_size;
-            size_t chunk_size = 20 * 1024 * 1024;
-
 
             cout << "using chunk size: " << chunk_size << endl;
 
@@ -72,19 +69,19 @@ int main(int argc, char *argv[])
             file.read(&chunk_data[0],   /* address of buffer start */
                       this_chunk_size); /* this many bytes is to be read */
 
-            /* do something with chunk_data before next iteration */
-            cout << "chunk #" << i << endl;
-            myfile << "chunk #" << i << endl;
 
-            for (const auto c : chunk_data) 
+            cout << "chunk #" << i << endl;
+
+            for (const auto c : chunk_data)
             {
-               // cout << hex << int(c);
-             
-                myfile <<c;
+                myfile << c;
             }
             cout << endl;
-            myfile << endl;
-
+           
         }
     }
+}
+int main(int argc, char *argv[])
+{
+    chunking("./", 20 * 1024 * 1024);
 }
