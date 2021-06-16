@@ -49,7 +49,8 @@ namespace schifra {
                 file_encoder(const encoder_type & encoder,
                     const std::string & input_file_name,
                         const std::string & output_file_name) {
-                    const std::size_t columns = data_length;
+
+                    const std::size_t columns = 219;
                     const std::size_t rows = part_size_bytes / columns;
                     const std::size_t one_chunk_size_bytes = rows * data_length;
 
@@ -90,12 +91,20 @@ namespace schifra {
                         }
 
                         std::size_t index = 0;
-                       
-                        while (remaining_bytes >= data_length) {
+                        int a = 0;
+                        
+                        while (remaining_bytes >= 219) {
+                            a += 5;
                             chunk_data[index] = new char[code_length];
-                            in_stream.read( & chunk_data[index][0], static_cast < std::streamsize > (data_length));
+                            in_stream.read( & chunk_data[index][0], static_cast < std::streamsize > (219));
+                           
+                            // Adding 4 bytes end of block
+                            char *p = (char*)&a;
+                            for (int i = 219; i < 223 ; ++i)
+                                   chunk_data[index][i] =  static_cast<int>(*p++);
+
                             process_block(encoder, out_stream, chunk_data[index], fec_buffer_, data_length);
-                            remaining_bytes -= data_length;
+                            remaining_bytes -= 219;
                             index++;
                         }
 
@@ -107,6 +116,8 @@ namespace schifra {
                             index++;
                         }
                         if (remaining_bytes_exists) {
+                            // If we have remaining_bytes, handle it here
+                            // Transpose semi block
                             for (std::size_t i = 0; i < code_length; ++i) {
                                 for (std::size_t j = 0; j < index - 1; ++j) {
                                     out_stream << chunk_data[j][i];
@@ -117,7 +128,7 @@ namespace schifra {
                                 out_stream << chunk_data[index - 1][i];
                             }
                         } else {
-
+                            // Transpose full block
                             for (std::size_t i = 0; i < code_length; ++i) {
                                 for (std::size_t j = 0; j < index; ++j) {
                                     out_stream << chunk_data[j][i];
