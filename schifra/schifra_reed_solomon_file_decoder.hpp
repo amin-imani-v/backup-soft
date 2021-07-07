@@ -50,7 +50,7 @@ namespace schifra {
                             bool debug,
                             int pause_block) : current_block_index_(0) {
 
-                    const std::size_t columns = data_length;
+                    const std::size_t columns = 219;
                     const std::size_t rows = part_size_bytes / columns;
                     const std::size_t one_chunk_size_bytes = rows * code_length;
 
@@ -122,7 +122,7 @@ namespace schifra {
                                 }
                             } else {
                                 process_complete_block(decoder, chunk_data[i], out_stream);
-                                out_stream.write( & chunk_data[i][0], static_cast < std::streamsize > (data_length));
+                                out_stream.write( & chunk_data[i][0], static_cast < std::streamsize > (219));
                                 if(debug){
                                     std::cout<< "Decoding block " << current_block_index_<< std::endl;
                                     for(std::size_t j = 0; j < code_length; ++j){
