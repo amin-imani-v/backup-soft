@@ -18,7 +18,7 @@
 (*                                                                        *)
 (**************************************************************************)
 */
-
+    
 #ifndef INCLUDE_SCHIFRA_REED_SOLOMON_FILE_ENCODER_HPP
 #define INCLUDE_SCHIFRA_REED_SOLOMON_FILE_ENCODER_HPP
 
@@ -50,7 +50,7 @@ namespace schifra {
                     const std::string & input_file_name,
                         const std::string & output_file_name) {
 
-                    const std::size_t columns = 219;
+                    const std::size_t columns = 223;
                     const std::size_t rows = part_size_bytes / columns;
                     const std::size_t one_chunk_size_bytes = rows * data_length;
 
@@ -74,7 +74,7 @@ namespace schifra {
 
                     std::ofstream out_stream(output_file_name.c_str(), std::ios::binary);
                     if (!out_stream) {
-                        std::cout << "reed_solomon::file_encoder() - Error: output file could not be created." << std::endl;
+                        std::cout << " reed_solomon::file_encoder() - Error: output file could not be created." << std::endl;
                         return;
                     }
 
@@ -93,26 +93,29 @@ namespace schifra {
                         std::size_t index = 0;
                         int a = 0;
                         
-                        while (remaining_bytes >= 219) {
+                        while (remaining_bytes >= 223) {
                             a += 5;
                             chunk_data[index] = new char[code_length];
-                            in_stream.read( & chunk_data[index][0], static_cast < std::streamsize > (219));
+                            in_stream.read( & chunk_data[index][0], static_cast < std::streamsize > (223));
                            
                             // Adding 4 bytes end of block
-                            char *p = (char*)&a;
-                            for (int i = 219; i < 223 ; ++i)
+                            /*char *p = (char*)&a;
+                            for (int i = 219; i < 223 ; i++)
                                    chunk_data[index][i] =  static_cast<int>(*p++);
+                            for(int i = 219; i < 223 ; i++)
+                                chunk_data[index][i] = 'a';
+                        std::cout<<"Here " <<remaining_bytes<<std::endl;*/
 
-                            process_block(encoder, out_stream, chunk_data[index], fec_buffer_, data_length);
-                            remaining_bytes -= 219;
-                            index++;
+                            process_block(encoder, out_stream, chunk_data[index], fec_buffer_, data_length,remaining_bytes);
+
+                            remaining_bytes -= 223;
+                            index++;    
                         }
-
                         if (remaining_bytes > 0) {
                             remaining_bytes_exists = true;
                             chunk_data[index] = new char[remaining_bytes + fec_length];
                             in_stream.read( & chunk_data[index][0], static_cast < std::streamsize > (remaining_bytes));
-                            process_block(encoder, out_stream, chunk_data[index], fec_buffer_, remaining_bytes);
+                            process_block(encoder, out_stream, chunk_data[index], fec_buffer_, remaining_bytes,remaining_bytes);
                             index++;
                         }
                         if (remaining_bytes_exists) {
@@ -148,12 +151,13 @@ namespace schifra {
                         std::ofstream & out_stream,
                         char * data_buffer_,
                         char * fec_buffer_,
-                        const std::size_t & read_amount) {
+                        const std::size_t & read_amount, std::size_t remaining_bytes) {
                         
                         
                         for (std::size_t i = 0; i < read_amount; ++i) {
                             block_.data[i] = (data_buffer_[i] & 0xFF);
                         }
+
                         if (read_amount < data_length) {
                             for (std::size_t i = read_amount; i < data_length; ++i) {
                                 block_.data[i] = 0x00;

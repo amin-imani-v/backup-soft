@@ -14,7 +14,7 @@ int main()
    const std::size_t code_length         = 255;
    const std::size_t fec_length          =   32;
    const std::size_t part_size_bytes     = 1048576;
-   const std::string input_file_name     = "input.txt";
+   const std::string input_file_name     = "input3.txt";
    const std::string output_file_name    = "encoded_file.txt";
 
    typedef schifra::reed_solomon::encoder<code_length,fec_length> encoder_t;
