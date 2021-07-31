@@ -56,8 +56,7 @@ namespace schifra {
 
                     char * fec_buffer_ = new char[fec_length];
                     char ** chunk_data = new char * [rows];
-                   
-                    bool remaining_bytes_exists = false;
+                    bool remaining_bytes_exists = false; 
 
                     std::size_t file_size = schifra::fileio::file_size(input_file_name);
                     if (file_size == 0) {
@@ -70,11 +69,10 @@ namespace schifra {
                         std::cout << "reed_solomon::file_encoder() - Error: input file could not be opened." << std::endl;
                         return;
                     }
-                    std::cout << "Size of the file is" << " " << file_size << " " << "bytes" << std::endl;
 
-                    std::ofstream out_stream(output_file_name.c_str(), std::ios::binary);
-                    if (!out_stream) {
-                        std::cout << " reed_solomon::file_encoder() - Error: output file could not be created." << std::endl;
+                    std::cout << "Size of the file is" << " " << file_size << " " << "bytes" << std::endl;
+                    if(file_size >= 10737418240){
+                    std::cout << "Size of the file is greater than 10 GB"<< std::endl;
                         return;
                     }
 
@@ -106,7 +104,7 @@ namespace schifra {
                                 chunk_data[index][i] = 'a';
                         std::cout<<"Here " <<remaining_bytes<<std::endl;*/
 
-                            process_block(encoder, out_stream, chunk_data[index], fec_buffer_, data_length,remaining_bytes);
+                            process_block(encoder, chunk_data[index], fec_buffer_, data_length,remaining_bytes);
 
                             remaining_bytes -= 223;
                             index++;    
@@ -115,40 +113,56 @@ namespace schifra {
                             remaining_bytes_exists = true;
                             chunk_data[index] = new char[remaining_bytes + fec_length];
                             in_stream.read( & chunk_data[index][0], static_cast < std::streamsize > (remaining_bytes));
-                            process_block(encoder, out_stream, chunk_data[index], fec_buffer_, remaining_bytes,remaining_bytes);
+                            process_block(encoder, chunk_data[index], fec_buffer_, remaining_bytes,remaining_bytes);
                             index++;
                         }
+                        int index_output_file = 0;
                         if (remaining_bytes_exists) {
                             // If we have remaining_bytes, handle it here
                             // Transpose semi block
+
                             for (std::size_t i = 0; i < code_length; ++i) {
+                                std::string name = "encoded_file" + std::to_string(index_output_file) + ".txt";
+                                std::ofstream  out_stream(name.c_str(), std::ios::app);
                                 for (std::size_t j = 0; j < index - 1; ++j) {
                                     out_stream << chunk_data[j][i];
                                 }
+                                out_stream.close();
+                                index_output_file++; 
+                                if(index_output_file >= 10)
+                                    index_output_file = 0;
                             }
+                            std::string name = "encoded_file" + std::to_string(index_output_file) + ".txt";
+                            std::ofstream  out_stream(name.c_str(), std::ios::app);
                             for (std::size_t i = 0; i < remaining_bytes + fec_length; ++i) {
 
                                 out_stream << chunk_data[index - 1][i];
                             }
+                             out_stream.close();
                         } else {
                             // Transpose full block
                             for (std::size_t i = 0; i < code_length; ++i) {
+                                std::string name = "encoded_file" + std::to_string(index_output_file) + ".txt";
+                                std::ofstream  out_stream(name.c_str(),  std::ios::app);
                                 for (std::size_t j = 0; j < index; ++j) {
                                     out_stream << chunk_data[j][i];
                                 }
-                            }
-
+                                out_stream.close();
+                                index_output_file++;
+                                if(index_output_file >= 10)
+                                    index_output_file = 0;
+                            }                             
                         }
                     }
 
                     in_stream.close();
-                    out_stream.close();
+                
                 }
 
                 private:
 
                     inline void process_block(const encoder_type & encoder,
-                        std::ofstream & out_stream,
+                       
                         char * data_buffer_,
                         char * fec_buffer_,
                         const std::size_t & read_amount, std::size_t remaining_bytes) {
